@@ -1,0 +1,34 @@
+{
+  "basics": {
+    "name": "Jake Ryan",
+    "email": "jake@qmail.com",
+    "phone": "123-456-7890",
+    "linkedin": "linkedin.com/in/jake",
+    "github": "github.com/jake",
+    "website": "jake-ryan.com"
+  },
+  "education": [
+    {
+      "school": "Southwestern University",
+      "location": "Georgetown, TX",
+      "degree": "Bachelor of Arts in Computer Science",
+      "date": "Aug. 2018 – May 2021"
+    }
+  ],
+  "experience": [
+    {
+      "company": "Undergraduate Research Assistant",
+      "role": "Research Assistant",
+      "location": "College Station, TX",
+      "date": "June 2020 – Present",
+      "points": [
+        "Developed a REST API using FastAPI and PostgreSQL",
+        "Managed database schema using Alembic"
+      ]
+    }
+  ],
+  "skills": {
+    "languages": ["Java", "Python", "Go", "SQL"],
+    "tools": ["Git", "Docker", "VS Code"]
+  }
+}
