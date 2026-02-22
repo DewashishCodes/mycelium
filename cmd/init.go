@@ -3,8 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"github.com/spf13/cobra"
+
 	"github.com/go-git/go-git/v5"
+	"github.com/spf13/cobra"
 )
 
 func init() {
@@ -13,64 +14,65 @@ func init() {
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize a new CVVC repository",
+	Short: "Initialize CVVC with Dewashish's AI/ML Template",
 	Run: func(cmd *cobra.Command, args []string) {
-		// 1. Initialize Git Repo
-		_, err := git.PlainInit(".", false)
-		if err == git.ErrRepositoryAlreadyExists {
-			fmt.Println("⚠️  Repo already exists here!")
-		} else if err != nil {
-			fmt.Printf("Error initializing git: %s\n", err)
-			return
-		}
+		git.PlainInit(".", false)
 
-		// 2. The "Jake's Resume" Template
-		jakesJson := `{
+		content := `{
   "basics": {
-    "name": "Jake Ryan",
-    "email": "jake@qmail.com",
-    "phone": "123-456-7890",
-    "linkedin": "linkedin.com/in/jake",
-    "github": "github.com/jake",
-    "website": "jake-ryan.com"
+    "name": "Dewashish Lambore",
+    "email": "dewashish.lambore@gmail.com",
+    "phone": "+91 9307059152",
+    "linkedin": "linkedin.com/in/dewashish",
+    "github": "github.com/dewashish"
   },
   "education": [
     {
-      "school": "Southwestern University",
-      "location": "Georgetown, TX",
-      "degree": "Bachelor of Arts in Computer Science",
-      "date": "Aug. 2018 – May 2021"
-    }
-  ],
-  "experience": [
-    {
-      "company": "Undergraduate Research Assistant",
-      "role": "Research Assistant",
-      "location": "College Station, TX",
-      "date": "June 2020 – Present",
-      "points": [
-        "Developed a REST API using FastAPI and PostgreSQL",
-        "Managed database schema using Alembic"
-      ]
+      "school": "Symbiosis Institute of Technology, Pune",
+      "degree": "Bachelor of Technology in Electronics and Telecommunication",
+      "date": "2024-2028",
+      "cgpa": "8.40"
     }
   ],
   "skills": {
-    "languages": ["Java", "Python", "Go", "SQL"],
-    "tools": ["Git", "Docker", "VS Code"]
-  }
+    "Languages": "Python, JavaScript, C++, C, SQL",
+    "AI Tools": "Fine tuning, RAG, Supervised/Unsupervised Learning",
+    "Libraries": "Numpy, Pandas, Scikitlearn, React, Tailwind, PyTorch",
+    "Development": "Docker, Kubernetes, Github Actions"
+  },
+  "certifications": [
+    "Oracle Cloud Infrastructure 2025 Certified Generative AI Professional",
+    "Advanced Learning Algorithms – DeepLearning.AI",
+    "MATLAB Machine Learning Onramp – MathWorks"
+  ],
+  "experience": [
+    {
+      "company": "SCAAI Pune",
+      "role": "AI Intern",
+      "date": "July 2025-Present",
+      "points": [
+        "Developing AI-driven FinTech predictive modeling solutions",
+        "Collaborating to deploy compliant (AML, KYC) production-ready models"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Resilient Multi-Modal Agentic RAG System",
+      "tech": "Python, LangChain, FastAPI",
+      "points": [
+        "Engineered RAG pipeline with Hybrid Search + GPU reranking, achieving 90% QA accuracy",
+        "Cut processing time by 86% (3 mins to 25 seconds)"
+      ]
+    }
+  ],
+  "achievements": [
+    "Top 180 out of 46,178 in Bajaj Finserv Hackrx 6.0 Runner-up",
+    "2Fast2Hack Hackathon Runner-up (600+ participants)"
+  ]
 }`
-
-		// 3. Write the file
-		err = os.WriteFile("resume.json", []byte(jakesJson), 0644)
-		if err != nil {
-			fmt.Println("Error creating resume.json:", err)
-			return
-		}
-
-		// 4. Create .gitignore
-		ignoreContent := "*.pdf\ncvvc.exe\n"
-		os.WriteFile(".gitignore", []byte(ignoreContent), 0644)
-
-		fmt.Println("✅ CVVC Initialized! Created 'resume.json' with Jake's template.")
+		os.WriteFile("resume.json", []byte(content), 0644)
+		os.WriteFile(".gitignore", []byte("*.pdf\ncvvc.exe\n"), 0644)
+		fmt.Println("✅ CVVC Initialized with your AI/ML profile.")
 	},
 }

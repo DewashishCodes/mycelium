@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -11,296 +10,201 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// --- DATA STRUCTURES ---
-type Resume struct {
-	Basics     Basics       `json:"basics"`
-	Education  []Education  `json:"education"`
-	Experience []Experience `json:"experience"`
-	Skills     Skills       `json:"skills"`
-}
-
-type Basics struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Phone    string `json:"phone"`
-	Linkedin string `json:"linkedin"`
-	Github   string `json:"github"`
-	Website  string `json:"website"`
-}
-
-type Education struct {
-	School   string `json:"school"`
-	Location string `json:"location"`
-	Degree   string `json:"degree"`
-	Date     string `json:"date"`
-}
-
-type Experience struct {
-	Company  string   `json:"company"`
-	Role     string   `json:"role"`
-	Location string   `json:"location"`
-	Date     string   `json:"date"`
-	Points   []string `json:"points"`
-}
-
-type Skills struct {
-	Languages  []string `json:"languages"`
-	Tools      []string `json:"tools"`
-	Frameworks []string `json:"frameworks"`
-}
-
-// --- COMMAND SETUP ---
 func init() {
 	rootCmd.AddCommand(editCmd)
 }
 
 var editCmd = &cobra.Command{
 	Use:   "edit",
-	Short: "Open the Live Resume Editor",
+	Short: "Open the Comprehensive Resume Editor",
 	Run: func(cmd *cobra.Command, args []string) {
-
-		// 1. Route: Serve the HTML Editor
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			data, err := os.ReadFile("resume.json")
 			if err != nil {
-				http.Error(w, "Could not read resume.json", 500)
+				http.Error(w, "resume.json not found.", 404)
 				return
 			}
-
-			// We pass the RAW JSON string to the template so JS can use it
-			tmpl, err := template.New("editor").Parse(editorHTML)
-			if err != nil {
-				http.Error(w, "Template error: "+err.Error(), 500)
-				return
-			}
-
-			tmpl.Execute(w, string(data))
+			tmpl, _ := template.New("editor").Parse(editorHTML)
+			tmpl.Execute(w, template.HTML(data))
 		})
 
-		// 2. Route: Save Changes (API)
 		http.HandleFunc("/save", func(w http.ResponseWriter, r *http.Request) {
-			if r.Method != "POST" {
-				http.Error(w, "Only POST allowed", 405)
-				return
-			}
-
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				http.Error(w, "Bad request", 400)
-				return
-			}
-
-			// Verify it is valid JSON before saving
-			var check Resume
-			if err := json.Unmarshal(body, &check); err != nil {
-				http.Error(w, "Invalid JSON format", 400)
-				return
-			}
-
-			// Write to disk
-			err = os.WriteFile("resume.json", body, 0644)
-			if err != nil {
-				http.Error(w, "Failed to write file", 500)
-				return
-			}
-
+			body, _ := io.ReadAll(r.Body)
+			os.WriteFile("resume.json", body, 0644)
 			w.WriteHeader(200)
-			w.Write([]byte("Saved"))
-			fmt.Println("💾 Resume saved successfully.")
 		})
 
-		// 3. Start Server
-		fmt.Println("✅ Live Editor is running!")
-		fmt.Println("🌍 Open: http://localhost:9090")
+		fmt.Println("🚀 CVVC Editor: http://localhost:9090")
 		http.ListenAndServe(":9090", nil)
 	},
 }
 
-// --- THE FRONTEND (HTML + CSS + JS) ---
 const editorHTML = `
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CVVC Live Editor</title>
+    <title>CVVC Master Editor</title>
     <style>
-        body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: sans-serif; overflow: hidden; }
-        
-        /* LEFT PANEL: EDITOR */
-        .editor-panel {
-            width: 40%;
-            background: #1e1e1e;
-            color: #d4d4d4;
-            display: flex;
-            flex-direction: column;
-            border-right: 2px solid #333;
-        }
-        .editor-header { padding: 10px; background: #252526; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-        .save-btn { background: #0e639c; color: white; border: none; padding: 5px 15px; cursor: pointer; border-radius: 3px; }
-        .save-btn:hover { background: #1177bb; }
-        
-        textarea {
-            flex: 1;
-            background: #1e1e1e;
-            color: #dcdcdc;
-            border: none;
-            padding: 15px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
-            resize: none;
-            outline: none;
-        }
-
-        /* RIGHT PANEL: PREVIEW */
-        .preview-panel {
-            width: 60%;
-            background: #525659;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            justify-content: center;
-        }
-        .paper {
-            background: white;
-            width: 210mm;
-            min-height: 297mm;
-            padding: 40px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            color: #333;
-            font-family: "Times New Roman", Times, serif;
-            line-height: 1.3;
-        }
-
-        /* RESUME STYLES (Jake's Format) */
-        h1 { text-align: center; margin-bottom: 5px; text-transform: uppercase; font-size: 24pt; margin-top: 0; }
-        .contact { text-align: center; margin-bottom: 20px; font-size: 11pt; }
-        .section-title {
-            font-size: 14pt;
-            font-weight: bold;
-            border-bottom: 1px solid black;
-            margin-top: 15px;
-            margin-bottom: 10px;
-            padding-bottom: 2px;
-            text-transform: uppercase;
-        }
-        .entry { margin-bottom: 10px; }
-        .header-row { display: flex; justify-content: space-between; font-weight: bold; }
-        .sub-row { display: flex; justify-content: space-between; font-style: italic; }
+        :root { --bg: #f8f9fa; --sidebar: #212529; --primary: #0d6efd; --text: #f8f9fa; }
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Inter', sans-serif; background: var(--bg); overflow: hidden; }
+        .nav-sidebar { width: 80px; background: var(--sidebar); display: flex; flex-direction: column; align-items: center; padding-top: 20px; gap: 20px; border-right: 1px solid #333; }
+        .nav-item { color: #888; cursor: pointer; font-size: 20px; transition: 0.2s; }
+        .nav-item.active { color: white; }
+        .form-panel { width: 450px; background: white; border-right: 1px solid #dee2e6; display: flex; flex-direction: column; }
+        .form-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .form-content { flex: 1; overflow-y: auto; padding: 20px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #666; margin-bottom: 5px; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px; margin-bottom: 10px; }
+        .card { border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 15px; background: #fafafa; }
+        .controls { display: flex; gap: 5px; margin-top: 10px; }
+        .btn-sm { padding: 4px 8px; font-size: 11px; border: 1px solid #ccc; background: white; cursor: pointer; border-radius: 3px; }
+        .btn-add { background: #e7f3ff; color: #007bff; border: 1px dashed #007bff; width: 100%; padding: 10px; cursor: pointer; margin-top: 10px; border-radius: 5px;}
+        .save-btn { background: #198754; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .preview-panel { flex: 1; background: #525659; overflow-y: auto; display: flex; justify-content: center; padding: 40px 0; }
+        .paper { background: white; width: 210mm; min-height: 297mm; padding: 50px; box-shadow: 0 0 20px rgba(0,0,0,0.5); font-family: 'Times New Roman', Times, serif; }
+        .res-name { text-align: center; font-size: 26pt; border-bottom: 1.5px solid black; padding-bottom: 5px; margin-bottom: 10px; }
+        .res-contact { text-align: center; font-size: 11pt; margin-bottom: 10px; }
+        .res-sec { font-weight: bold; text-transform: uppercase; border-bottom: 1px solid black; margin-top: 15px; font-size: 12pt; }
+        .res-row { display: flex; justify-content: space-between; font-weight: bold; margin-top: 4px; font-size: 11pt; }
         ul { margin: 5px 0; padding-left: 20px; }
-        li { margin-bottom: 2px; }
+        li { font-size: 10.5pt; margin-bottom: 2px; }
     </style>
 </head>
 <body>
-
-    <!-- LEFT: JSON INPUT -->
-    <div class="editor-panel">
-        <div class="editor-header">
-            <span>📝 Resume Data (JSON)</span>
-            <button class="save-btn" onclick="saveData()">Save Version</button>
-        </div>
-        <textarea id="jsonInput" oninput="updatePreview()">{{.}}</textarea>
+    <div class="nav-sidebar">
+        <div class="nav-item active" onclick="tab('basics', this)">👤</div>
+        <div class="nav-item" onclick="tab('education', this)">🎓</div>
+        <div class="nav-item" onclick="tab('experience', this)">💼</div>
+        <div class="nav-item" onclick="tab('projects', this)">🚀</div>
+        <div class="nav-item" onclick="tab('skills', this)">🛠️</div>
+        <div class="nav-item" onclick="tab('order', this)">🔃</div>
     </div>
-
-    <!-- RIGHT: LIVE PREVIEW -->
+    <div class="form-panel">
+        <div class="form-header">
+            <h3 id="tab-title">Basics</h3>
+            <button class="save-btn" onclick="save()">SAVE</button>
+        </div>
+        <div class="form-content" id="form-area"></div>
+    </div>
     <div class="preview-panel">
-        <div class="paper" id="resumePreview">
-            <!-- Content injected by JS -->
-        </div>
+        <div id="capture-area" class="paper"></div>
     </div>
+
+    <script id="data-raw" type="text/plain">{{.}}</script>
 
     <script>
-        // Initial Render
-        const rawData = document.getElementById('jsonInput').value;
-        let resumeData = {};
-        
-        try {
-            resumeData = JSON.parse(rawData);
-            renderResume(resumeData);
-        } catch(e) { console.log("Init error"); }
+        let resume = JSON.parse(document.getElementById('data-raw').textContent);
+        if (!resume.sectionOrder) resume.sectionOrder = ['education', 'skills', 'experience', 'projects'];
+        let currentTab = 'basics';
 
-        // Live Update Function
-        function updatePreview() {
-            const input = document.getElementById('jsonInput').value;
-            try {
-                resumeData = JSON.parse(input);
-                renderResume(resumeData);
-                // Auto-save logic could go here (debounce)
-            } catch(e) {
-                // Ignore JSON syntax errors while typing
-            }
+        function tab(t, el) {
+            currentTab = t;
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('tab-title').innerText = t.charAt(0).toUpperCase() + t.slice(1);
+            renderForm();
         }
 
-        // Save Function
-        async function saveData() {
-            const input = document.getElementById('jsonInput').value;
-            try {
-                // Validate JSON
-                JSON.parse(input);
+        function renderForm() {
+            const area = document.getElementById('form-area');
+            area.innerHTML = '';
+
+            if (currentTab === 'basics') {
+                area.innerHTML = '<label>Full Name</label><input id="inp-name" value="' + resume.basics.name + '">' +
+                                 '<label>Email</label><input id="inp-email" value="' + resume.basics.email + '">' +
+                                 '<label>Phone</label><input id="inp-phone" value="' + resume.basics.phone + '">';
                 
-                const response = await fetch('/save', {
-                    method: 'POST',
-                    body: input
+                document.getElementById('inp-name').oninput = (e) => { resume.basics.name = e.target.value; render(); };
+                document.getElementById('inp-email').oninput = (e) => { resume.basics.email = e.target.value; render(); };
+                document.getElementById('inp-phone').oninput = (e) => { resume.basics.phone = e.target.value; render(); };
+
+            } else if (currentTab === 'experience') {
+                resume.experience.forEach((exp, i) => {
+                    let card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = '<label>Company</label><input class="c-comp" value="' + exp.company + '">' +
+                                     '<label>Role</label><input class="c-role" value="' + exp.role + '">' +
+                                     '<label>Points (Enter for new line)</label><textarea class="c-pts">' + exp.points.join('\n') + '</textarea>' +
+                                     '<div class="controls"><button onclick="remove(\'experience\','+i+')">Delete</button></div>';
+                    
+                    card.querySelector('.c-comp').oninput = (e) => { resume.experience[i].company = e.target.value; render(); };
+                    card.querySelector('.c-role').oninput = (e) => { resume.experience[i].role = e.target.value; render(); };
+                    card.querySelector('.c-pts').oninput = (e) => { resume.experience[i].points = e.target.value.split('\n'); render(); };
+                    area.appendChild(card);
                 });
-                
-                if (response.ok) {
-                    alert("Saved to disk!");
-                } else {
-                    alert("Error saving");
+                let addBtn = document.createElement('button');
+                addBtn.className = 'btn-add';
+                addBtn.innerText = '+ Add Experience';
+                addBtn.onclick = () => { resume.experience.push({company:'', role:'', date:'', points:[]}); renderForm(); render(); };
+                area.appendChild(addBtn);
+
+            } else if (currentTab === 'skills') {
+                for (let k in resume.skills) {
+                    let div = document.createElement('div');
+                    div.innerHTML = '<label>'+k+'</label><textarea id="sk-'+k+'">'+resume.skills[k]+'</textarea>';
+                    div.querySelector('textarea').oninput = (e) => { resume.skills[k] = e.target.value; render(); };
+                    area.appendChild(div);
                 }
-            } catch(e) {
-                alert("Invalid JSON! Fix errors before saving.");
+            } else if (currentTab === 'order') {
+                resume.sectionOrder.forEach((sec, i) => {
+                    let div = document.createElement('div');
+                    div.className = 'card';
+                    div.style.display = 'flex';
+                    div.style.justifyContent = 'space-between';
+                    div.innerHTML = '<span>'+sec.toUpperCase()+'</span>' +
+                                    '<div><button onclick="moveOrder('+i+', -1)">Up</button><button onclick="moveOrder('+i+', 1)">Down</button></div>';
+                    area.appendChild(div);
+                });
+            } else {
+                area.innerHTML = '<p>Section coming soon or use resume.json</p>';
             }
         }
 
-        // Renderer (Converts JSON -> HTML)
-        function renderResume(data) {
-            const r = document.getElementById('resumePreview');
-            
-            // Basics
-            let html = "<h1>" + (data.basics.name || "") + "</h1>";
-            html += "<div class='contact'>";
-            html += [data.basics.phone, data.basics.email, data.basics.linkedin, data.basics.github]
-                    .filter(Boolean).join(" | ");
-            html += "</div>";
-
-            // Education
-            if (data.education && data.education.length > 0) {
-                html += "<div class='section-title'>Education</div>";
-                data.education.forEach(edu => {
-                    html += "<div class='entry'>";
-                    html += "<div class='header-row'><span>" + edu.school + "</span><span>" + edu.location + "</span></div>";
-                    html += "<div class='sub-row'><span>" + edu.degree + "</span><span>" + edu.date + "</span></div>";
-                    html += "</div>";
-                });
-            }
-
-            // Experience
-            if (data.experience && data.experience.length > 0) {
-                html += "<div class='section-title'>Experience</div>";
-                data.experience.forEach(exp => {
-                    html += "<div class='entry'>";
-                    html += "<div class='header-row'><span>" + exp.company + "</span><span>" + exp.date + "</span></div>";
-                    html += "<div class='sub-row'><span>" + exp.role + "</span><span>" + exp.location + "</span></div>";
-                    if (exp.points && exp.points.length > 0) {
-                        html += "<ul>";
-                        exp.points.forEach(pt => html += "<li>" + pt + "</li>");
-                        html += "</ul>";
-                    }
-                    html += "</div>";
-                });
-            }
-
-            // Skills
-            if (data.skills) {
-                html += "<div class='section-title'>Technical Skills</div>";
-                html += "<div>";
-                if (data.skills.languages) html += "<strong>Languages:</strong> " + data.skills.languages.join(", ") + "<br>";
-                if (data.skills.frameworks) html += "<strong>Frameworks:</strong> " + data.skills.frameworks.join(", ") + "<br>";
-                if (data.skills.tools) html += "<strong>Tools:</strong> " + data.skills.tools.join(", ");
-                html += "</div>";
-            }
-
-            r.innerHTML = html;
+        function moveOrder(i, dir) {
+            let target = i + dir;
+            if (target < 0 || target >= resume.sectionOrder.length) return;
+            let temp = resume.sectionOrder[i];
+            resume.sectionOrder[i] = resume.sectionOrder[target];
+            resume.sectionOrder[target] = temp;
+            renderForm(); render();
         }
+
+        function remove(arr, i) {
+            resume[arr].splice(i, 1);
+            renderForm(); render();
+        }
+
+        function render() {
+            const paper = document.getElementById('capture-area');
+            let h = '<div class="res-name">' + resume.basics.name + '</div>';
+            h += '<div class="res-contact">' + resume.basics.phone + ' | ' + resume.basics.email + '</div>';
+
+            resume.sectionOrder.forEach(sec => {
+                if (sec === 'education' && resume.education.length) {
+                    h += '<div class="res-sec">Education</div>';
+                    resume.education.forEach(e => { h += '<div class="res-row"><span>'+e.school+'</span><span>'+e.date+'</span></div><div>'+e.degree+'</div>'; });
+                } else if (sec === 'skills') {
+                    h += '<div class="res-sec">Technical Skills</div>';
+                    for (let k in resume.skills) { h += '<div><strong>'+k+':</strong> '+resume.skills[k]+'</div>'; }
+                } else if (sec === 'experience') {
+                    h += '<div class="res-sec">Experience</div>';
+                    resume.experience.forEach(exp => {
+                        h += '<div class="res-row"><span>'+exp.company+'</span><span>'+exp.date+'</span></div><div>'+exp.role+'</div>';
+                        h += '<ul>' + exp.points.map(p => p ? '<li>'+p+'</li>' : '').join('') + '</ul>';
+                    });
+                }
+            });
+            paper.innerHTML = h;
+        }
+
+        async function save() {
+            await fetch('/save', { method: 'POST', body: JSON.stringify(resume) });
+            alert("Saved!");
+        }
+
+        renderForm();
+        render();
     </script>
 </body>
 </html>
