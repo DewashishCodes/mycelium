@@ -1,74 +1,62 @@
-## C.V.V.C. (Curriculum Vitae Version Control)
+# Mycelium
+**The Version control system for you Resumes**
 
-C.V.V.C. is a command-line interface for version controlling resumes and CVs. It wraps Git functionality using the Go library **go-git**, enabling structured version control for resume files, including binary outputs such as PDFs.
+[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org)
+[![License](https://img.shields.io/badge/License-MIT-green)](./LICENSE)
+[![Build Status](https://img.shields.io/badge/Status-Stable-success)](#)
 
-The goal is simple: eliminate multiple scattered resume versions and manage your CV with proper branching, history, and diffs—just like source code.
+Mycelium is a domain-specific version control system (VCS) designed to manage the lifecycle of professional resumes. It treats career data as structured infrastructure (JSON), enabling high-fidelity branching, semantic versioning, and automated PDF compilation.
 
 ---
+
+## Overview
+Modern technical recruitment requires extreme specialization. Maintaining separate files for "Machine Learning Engineer," "Backend Developer," and "Data Scientist" roles often leads to fragmented data where updates in one version are lost in others. 
+
+Mycelium solves this by applying Git-based branching logic to a centralized career record. Users can maintain a master history while branching out specialized iterations for specific roles, ensuring all versions remain synchronized and traceable.
 
 ## Features
-
-### Core Commands
-
-* `cvvc init`
-  Initializes a resume template (currently based on Jake’s Resume Template from Overleaf).
-
-* `cvvc edit`
-  Launches a local editor at `localhost:9090` to modify, add, remove, or reorder sections and entries.
-
-* `cvvc status`
-  Displays the current branch and commit status.
-
-* `cvvc commit -m "message"`
-  Commits the current state of the resume with a message, storing it in permanent history.
-
-* `cvvc list`
-  Lists all previous commits for the resume.
-
-* `cvvc branch create <branch-name>`
-  Creates a new branch from the current branch.
-
-* `cvvc switch <branch-name>`
-  Switches between branches.
-
-* `cvvc export`
-  Exports the current resume to PDF format.
-
-* `cvvc diff`
-  Shows changes made compared to the previous commit.
+- **Branch-Based Specialization:** Use the `branch` command to create role-specific versions without polluting your master history.
+- **Live Form Dashboard:** A built-in web-based editor with real-time browser preview. No manual JSON editing required.
+- **Intelligence Layer:** Integrated Gemini-1.5-Flash AI to provide professional recruiter audits tailored to specific job titles.
+- **Semantic Diff Engine:** Mycelium understands resume structures, reporting changes in specific fields like "Role," "Company," or "Skills" rather than raw line additions.
+- **Headless PDF Production:** Automated PDF generation via a headless browser engine, ensuring a consistent and professional aesthetic.
 
 ---
 
-## Roadmap
+## Quick Start
 
-* **Rebase**
-  Move the current branch to a previous commit.
+### 1. Installation
+Install the Mycelium binary globally via Go:
+```bash
+go install github.com/DewashishCodes/mycelium@latest
+```
 
-* **Selective Diffing**
-  Compare any two chosen resume versions.
+### 2. Configuration (AI Layer)
+Configure the intelligence layer using your Gemini API key:
+```bash
+mycelium config --key YOUR_GEMINI_API_KEY
+```
 
-* **Multiple Templates**
-  Support for additional resume templates selectable during initialization.
+### 3. Initialize a Network
+```bash
+mkdir my-career && cd my-career
+mycelium init
+```
 
-* **Template Transformation**
-  Convert a resume from one template format to another.
+### 4. Edit and Audit
+```bash
+mycelium edit                        # Launch the local dashboard
+mycelium review --role="AI Engineer" # Get a targeted technical audit
+mycelium export                      # Generate the production PDF
+```
 
 ---
 
-## Contributing
+## Documentation
+For detailed information regarding the architecture, VCS implementation, and the intelligence layer, please refer to the **[Technical Specification (TECHNICAL.md)](./TECHNICAL.md)**.
 
-Contributions are welcome.
-Please open a pull request for improvements or submit an issue if you encounter any problems.
-
-You can also reach out via email or LinkedIn.
+## License
+Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
-
-## Release
-
-C.V.V.C. is currently under active development.
-Version 1.0 is planned for release in March 2026.
-
-If you find this project useful, consider starring the repository and following for future updates.
-
-Built by Dewashish (with love ofcc).
+**Maintained by [Dewashish Lambore](https://github.com/DewashishCodes)**
