@@ -34,10 +34,15 @@ var statusCmd = &cobra.Command{
 		status, _ := w.Status()
 
 		if status.IsClean() {
-			fmt.Println("✨ Everything is committed and saved.")
+			fmt.Println("[INFO] Mycelium network is healthy and synchronized.")
 		} else {
-			fmt.Println("[WARN]  Uncommitted changes found in resume.json!")
-			fmt.Println("👉 Run 'mycelium commit -m \"message\"' to save your first version.")
+			// Check if it's a real change or just a timestamp change
+			if status["resume.json"].Worktree == git.Unmodified {
+				fmt.Println("[INFO] Mycelium network is healthy (metadata changes ignored).")
+			} else {
+				fmt.Println("[WARN] Uncommitted changes detected in the network.")
+				fmt.Println("[INFO] Run 'mycelium commit' to protect this version.")
+			}
 		}
 	},
 }

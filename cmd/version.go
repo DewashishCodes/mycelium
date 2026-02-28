@@ -1,0 +1,21 @@
+package cmd
+
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
+
+const CurrentVersion = "v1.0.0"
+
+func init() {
+	rootCmd.AddCommand(versionCmd)
+}
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version number of Mycelium",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("Mycelium %s - The Resume Versioning Network\n", CurrentVersion)
+	},
+}
