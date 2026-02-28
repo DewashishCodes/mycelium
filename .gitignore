@@ -1,2 +1,4 @@
 *.pdf
 cvvc.exe
+# Added by goreleaser init:
+dist/
