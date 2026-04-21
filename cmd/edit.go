@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+
 	"html/template"
 	"io"
+	"mycelium/internal/resume"
 	"net/http"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -19,7 +21,7 @@ var editCmd = &cobra.Command{
 	Short: "Open the Mycelium Live Form Editor",
 	Run: func(cmd *cobra.Command, args []string) {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			data, err := os.ReadFile("resume.json")
+			data, err := resume.ReadRaw()
 			if err != nil {
 				http.Error(w, "[ERROR] resume.json not found. Run 'mycelium init' first.", 404)
 				return
@@ -34,7 +36,16 @@ var editCmd = &cobra.Command{
 				return
 			}
 			body, _ := io.ReadAll(r.Body)
-			err := os.WriteFile("resume.json", body, 0644)
+			
+			// Try to unmarshal to validate before saving
+			var temp resume.Resume
+			if err := json.Unmarshal(body, &temp); err != nil {
+				w.WriteHeader(400)
+				fmt.Fprintf(w, "Invalid JSON: %v", err)
+				return
+			}
+
+			err := resume.Write(&temp)
 			if err != nil {
 				w.WriteHeader(500)
 				return
@@ -48,6 +59,7 @@ var editCmd = &cobra.Command{
 		http.ListenAndServe(":9090", nil)
 	},
 }
+
 
 const editorHTML = `
 <!DOCTYPE html>
