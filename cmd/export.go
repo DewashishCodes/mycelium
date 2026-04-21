@@ -1,12 +1,14 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
-	"io" // Used now!
+	"io"
+	"mycelium/internal/resume"
+	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -21,19 +23,31 @@ func init() {
 
 var exportCmd = &cobra.Command{
 	Use:   "export",
-	Short: "Generate Dewashish's Professional PDF",
+	Short: "Generate a professional PDF of your resume",
 	Run: func(cmd *cobra.Command, args []string) {
+		res, err := resume.Read()
+		if err != nil {
+			fmt.Println("[ERROR]", err)
+			return
+		}
+
 		// 1. Start temporary server for the PDF engine
-		go func() {
-			http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-				data, _ := os.ReadFile("resume.json")
-				var res interface{}
-				json.Unmarshal(data, &res)
-				tmpl, _ := template.New("p").Parse(pdfHTML)
-				tmpl.Execute(w, res)
-			})
-			http.ListenAndServe(":9091", nil)
-		}()
+		// Use a local mux to avoid conflicts with other commands
+		mux := http.NewServeMux()
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			tmpl, _ := template.New("p").Parse(pdfHTML)
+			tmpl.Execute(w, res)
+		})
+
+		// Find an available port if 9091 is taken, or just use 9091 with a listener
+		listener, err := net.Listen("tcp", ":9091")
+		if err != nil {
+			fmt.Println("[ERROR] Could not start PDF engine server on :9091:", err)
+			return
+		}
+		defer listener.Close()
+
+		go http.Serve(listener, mux)
 
 		fmt.Println("⏳ Starting PDF generation...")
 		time.Sleep(1 * time.Second)
@@ -69,7 +83,7 @@ var exportCmd = &cobra.Command{
 			return
 		}
 
-		// 4. FIX: Convert Stream to Bytes using 'io'
+		// 4. Convert Stream to Bytes
 		pdfBytes, err := io.ReadAll(pdfStream)
 		if err != nil {
 			fmt.Println("[ERROR] Error reading stream:", err)
@@ -77,7 +91,7 @@ var exportCmd = &cobra.Command{
 		}
 
 		// 5. Save file
-		outputName := "Dewashish_Resume.pdf"
+		outputName := fmt.Sprintf("%s_Resume.pdf", resume.SafeFilename(res.Basics.Name))
 		err = os.WriteFile(outputName, pdfBytes, 0644)
 		if err != nil {
 			fmt.Println("[ERROR] Error saving file:", err)
@@ -91,7 +105,7 @@ var exportCmd = &cobra.Command{
 // Helper for Rod library
 func toPtr(f float64) *float64 { return &f }
 
-// --- THE CSS/HTML DESIGN (Matches your PDF) ---
+// --- THE CSS/HTML DESIGN ---
 const pdfHTML = `
 <!DOCTYPE html>
 <html>
@@ -108,15 +122,21 @@ const pdfHTML = `
     </style>
 </head>
 <body>
-    <div class="name">{{.basics.name}}</div>
-    <div class="contact">{{.basics.phone}} | {{.basics.email}} | LinkedIn | Github</div>
+    <div class="name">{{.Basics.Name}}</div>
+    <div class="contact">
+        {{if .Basics.Phone}}{{.Basics.Phone}} | {{end}}
+        {{if .Basics.Email}}{{.Basics.Email}} | {{end}}
+        {{if .Basics.LinkedIn}}{{.Basics.LinkedIn}} | {{end}}
+        {{if .Basics.GitHub}}{{.Basics.GitHub}}{{end}}
+    </div>
     <div class="section">Education</div>
-    {{range .education}}<div class="row"><span>{{.school}}</span><span>{{.date}}</span></div><div class="sub-row"><span>{{.degree}}</span><span>(current): {{.cgpa}}</span></div>{{end}}
+    {{range .Education}}<div class="row"><span>{{.School}}</span><span>{{.Date}}</span></div><div class="sub-row"><span>{{.Degree}}</span><span>{{if .CGPA}}CGPA: {{.CGPA}}{{end}}</span></div>{{end}}
     <div class="section">Technical Skills</div>
-    <div style="font-size: 10.5pt; margin-top: 5px;">{{range $cat, $val := .skills}}<strong>{{$cat}}:</strong> {{$val}}<br>{{end}}</div>
+    <div style="font-size: 10.5pt; margin-top: 5px;">{{range $cat, $val := .Skills}}<strong>{{$cat}}:</strong> {{$val}}<br>{{end}}</div>
     <div class="section">Experience</div>
-    {{range .experience}}<div class="row"><span>{{.company}}</span><span>{{.date}}</span></div><div class="sub-row"><span>{{.role}}</span></div><ul>{{range .points}}<li>{{.}}</li>{{end}}</ul>{{end}}
+    {{range .Experience}}<div class="row"><span>{{.Company}}</span><span>{{.Date}}</span></div><div class="sub-row"><span>{{.Role}}</span></div><ul>{{range .Points}}<li>{{.}}</li>{{end}}</ul>{{end}}
     <div class="section">Projects</div>
-    {{range .projects}}<div class="row"><span>{{.name}} | <span style="font-weight:normal; font-style:italic;">{{.tech}}</span></span></div><ul>{{range .points}}<li>{{.}}</li>{{end}}</ul>{{end}}
+    {{range .Projects}}<div class="row"><span>{{.Name}} | <span style="font-weight:normal; font-style:italic;">{{.Tech}}</span></span></div><ul>{{range .Points}}<li>{{.}}</li>{{end}}</ul>{{end}}
 </body>
 </html>`
+
