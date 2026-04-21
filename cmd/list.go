@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"mycelium/internal/vcs"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/spf13/cobra"
 )
@@ -16,9 +16,13 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Show all saved versions (commits)",
 	Run: func(cmd *cobra.Command, args []string) {
-		r, _ := git.PlainOpen(".")
+		r, err := vcs.Open()
+		if err != nil {
+			fmt.Println("[ERROR]", err)
+			return
+		}
 
-		logs, err := r.Log(&git.LogOptions{})
+		logs, err := r.Log()
 		if err != nil {
 			fmt.Println("No versions found yet.")
 			return
@@ -32,3 +36,4 @@ var listCmd = &cobra.Command{
 		})
 	},
 }
+

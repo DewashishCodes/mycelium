@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"mycelium/internal/vcs"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/spf13/cobra"
@@ -15,23 +16,26 @@ var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show current branch and unsaved changes",
 	Run: func(cmd *cobra.Command, args []string) {
-		r, err := git.PlainOpen(".")
+		r, err := vcs.Open()
 		if err != nil {
-			fmt.Println("[ERROR] Not a mycelium repo. Run 'mycelium init'")
+			fmt.Println("[ERROR]", err)
 			return
 		}
 
-		// 1. Get current branch (With Safety Check)
-		ref, err := r.Head()
+		// 1. Get current branch
+		branch, err := r.CurrentBranch()
 		if err != nil {
 			fmt.Println("📍 Current Branch: (initial branch)")
 		} else {
-			fmt.Printf("📍 Current Branch: %s\n", ref.Name().Short())
+			fmt.Printf("📍 Current Branch: %s\n", branch)
 		}
 
 		// 2. Check for changes
-		w, _ := r.Worktree()
-		status, _ := w.Status()
+		status, err := r.Status()
+		if err != nil {
+			fmt.Println("[ERROR] Failed to get status:", err)
+			return
+		}
 
 		if status.IsClean() {
 			fmt.Println("[INFO] Mycelium network is healthy and synchronized.")
@@ -46,3 +50,4 @@ var statusCmd = &cobra.Command{
 		}
 	},
 }
+
