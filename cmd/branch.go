@@ -2,9 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"mycelium/internal/vcs"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/spf13/cobra"
 )
 
@@ -25,21 +24,27 @@ var branchListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all resume branches",
 	Run: func(cmd *cobra.Command, args []string) {
-		r, _ := git.PlainOpen(".")
-		branches, _ := r.Branches()
+		r, err := vcs.Open()
+		if err != nil {
+			fmt.Println("[ERROR]", err)
+			return
+		}
 
-		head, _ := r.Head()
-		current := head.Name()
+		current, _ := r.CurrentBranch()
+		branches, err := r.ListBranches()
+		if err != nil {
+			fmt.Println("[ERROR] Failed to list branches:", err)
+			return
+		}
 
 		fmt.Println("🌱 RESUME BRANCHES:")
-		branches.ForEach(func(br *plumbing.Reference) error {
+		for _, name := range branches {
 			prefix := "  "
-			if br.Name() == current {
+			if name == current {
 				prefix = "* "
 			}
-			fmt.Printf("%s%s\n", prefix, br.Name().Short())
-			return nil
-		})
+			fmt.Printf("%s%s\n", prefix, name)
+		}
 	},
 }
 
@@ -48,19 +53,16 @@ var branchCreateCmd = &cobra.Command{
 	Short: "Create a new resume branch",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		r, _ := git.PlainOpen(".")
-		w, _ := r.Worktree()
+		r, err := vcs.Open()
+		if err != nil {
+			fmt.Println("[ERROR]", err)
+			return
+		}
 
 		name := args[0]
-		branchRef := plumbing.NewBranchReferenceName(name)
-
-		err := w.Checkout(&git.CheckoutOptions{
-			Branch: branchRef,
-			Create: true,
-		})
-
+		err = r.CreateBranch(name)
 		if err != nil {
-			fmt.Println("Error creating branch:", err)
+			fmt.Printf("[ERROR] Failed to create branch '%s': %v\n", name, err)
 		} else {
 			fmt.Printf("🌱 Branch '%s' created and active.\n", name)
 		}
@@ -72,14 +74,14 @@ var branchSwitchCmd = &cobra.Command{
 	Short: "Switch to a different resume branch",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		r, _ := git.PlainOpen(".")
-		w, _ := r.Worktree()
+		r, err := vcs.Open()
+		if err != nil {
+			fmt.Println("[ERROR]", err)
+			return
+		}
 
 		name := args[0]
-		err := w.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.NewBranchReferenceName(name),
-		})
-
+		err = r.SwitchBranch(name)
 		if err != nil {
 			fmt.Printf("[ERROR] Branch '%s' does not exist.\n", name)
 		} else {
@@ -93,21 +95,20 @@ var branchDeleteCmd = &cobra.Command{
 	Short: "Delete a resume branch",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		r, _ := git.PlainOpen(".")
-		name := args[0]
-		
-		head, _ := r.Head()
-		if head.Name().Short() == name {
-			fmt.Printf("[ERROR] Cannot delete the currently active branch '%s'.\n", name)
+		r, err := vcs.Open()
+		if err != nil {
+			fmt.Println("[ERROR]", err)
 			return
 		}
 
-		err := r.Storer.RemoveReference(plumbing.NewBranchReferenceName(name))
+		name := args[0]
+		err = r.DeleteBranch(name)
 		if err != nil {
-			fmt.Printf("[ERROR] Failed to delete branch '%s': %v\n", name, err)
+			fmt.Printf("[ERROR] %v\n", err)
 		} else {
 			fmt.Printf("🗑️ Branch '%s' deleted.\n", name)
 		}
 	},
 }
+
 
