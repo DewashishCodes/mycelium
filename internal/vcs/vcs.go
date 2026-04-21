@@ -4,6 +4,7 @@ package vcs
 
 import (
 	"fmt"
+	"os/exec"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -153,3 +154,11 @@ func (r *Repo) Restore(shortHash string, force bool) (string, error) {
 	}
 	return fullHash.String(), nil
 }
+
+// Sync performs a git rebase of the current branch onto the target branch.
+// Currently wraps system git due to complexity of rebase in go-git.
+func (r *Repo) Sync(targetBranch string) ([]byte, error) {
+	return exec.Command("git", "rebase", targetBranch).CombinedOutput()
+}
+
+

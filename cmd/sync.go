@@ -2,9 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"os/exec"
+	"mycelium/internal/vcs"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/spf13/cobra"
 )
 
@@ -19,17 +18,16 @@ var syncCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		targetBranch := args[0]
 
-		r, _ := git.PlainOpen(".")
-		head, _ := r.Head()
-		currentBranch := head.Name().Short()
+		r, err := vcs.Open()
+		if err != nil {
+			fmt.Println("[ERROR]", err)
+			return
+		}
 
+		currentBranch, _ := r.CurrentBranch()
 		fmt.Printf("[INFO] Syncing %s with updates from %s...\n", currentBranch, targetBranch)
 
-		// Programmatic rebase is extremely complex in go-git,
-		// so for a production-ready tool, we wrap the git CLI
-		// to handle complex merge conflicts safely.
-		out, err := exec.Command("git", "rebase", targetBranch).CombinedOutput()
-
+		out, err := r.Sync(targetBranch)
 		if err != nil {
 			fmt.Println("[ERROR] Sync conflict detected!")
 			fmt.Println(string(out))
@@ -40,3 +38,4 @@ var syncCmd = &cobra.Command{
 		fmt.Printf("[SUCCESS] %s is now up-to-date with %s.\n", currentBranch, targetBranch)
 	},
 }
+
