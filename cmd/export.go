@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"embed"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"io"
