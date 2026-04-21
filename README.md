@@ -89,6 +89,3 @@ The Mycelium network grows through community input!
 Distributed under the MIT License. 
 
 *Built with ❤️ by [Dewashish Lambore](https://github.com/DewashishCodes)*
-**This shows recruiters you aren't just a coder—you are a Project Lead.** 
-
-**Ready to update the README and open the network?** 🍄🚀
