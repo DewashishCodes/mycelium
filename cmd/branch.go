@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"mycelium/internal/ui"
 	"mycelium/internal/vcs"
 
 	"github.com/spf13/cobra"
@@ -26,24 +26,20 @@ var branchListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		r, err := vcs.Open()
 		if err != nil {
-			fmt.Println("[ERROR]", err)
+			ui.PrintError(err.Error())
 			return
 		}
 
 		current, _ := r.CurrentBranch()
 		branches, err := r.ListBranches()
 		if err != nil {
-			fmt.Println("[ERROR] Failed to list branches:", err)
+			ui.PrintError("Failed to list branches")
 			return
 		}
 
-		fmt.Println("🌱 RESUME BRANCHES:")
+		ui.PrintHeader("Resume Branches")
 		for _, name := range branches {
-			prefix := "  "
-			if name == current {
-				prefix = "* "
-			}
-			fmt.Printf("%s%s\n", prefix, name)
+			ui.PrintBranch(name, name == current)
 		}
 	},
 }
@@ -55,16 +51,16 @@ var branchCreateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		r, err := vcs.Open()
 		if err != nil {
-			fmt.Println("[ERROR]", err)
+			ui.PrintError(err.Error())
 			return
 		}
 
 		name := args[0]
 		err = r.CreateBranch(name)
 		if err != nil {
-			fmt.Printf("[ERROR] Failed to create branch '%s': %v\n", name, err)
+			ui.PrintError("Failed to create branch: " + err.Error())
 		} else {
-			fmt.Printf("🌱 Branch '%s' created and active.\n", name)
+			ui.PrintSuccess("Branch '" + name + "' created and active.")
 		}
 	},
 }
@@ -76,16 +72,16 @@ var branchSwitchCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		r, err := vcs.Open()
 		if err != nil {
-			fmt.Println("[ERROR]", err)
+			ui.PrintError(err.Error())
 			return
 		}
 
 		name := args[0]
 		err = r.SwitchBranch(name)
 		if err != nil {
-			fmt.Printf("[ERROR] Branch '%s' does not exist.\n", name)
+			ui.PrintError("Branch '" + name + "' does not exist.")
 		} else {
-			fmt.Printf("🔄 Switched to branch '%s'.\n", name)
+			ui.PrintSuccess("Switched to branch '" + name + "'.")
 		}
 	},
 }
@@ -97,18 +93,19 @@ var branchDeleteCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		r, err := vcs.Open()
 		if err != nil {
-			fmt.Println("[ERROR]", err)
+			ui.PrintError(err.Error())
 			return
 		}
 
 		name := args[0]
 		err = r.DeleteBranch(name)
 		if err != nil {
-			fmt.Printf("[ERROR] %v\n", err)
+			ui.PrintError(err.Error())
 		} else {
-			fmt.Printf("🗑️ Branch '%s' deleted.\n", name)
+			ui.PrintSuccess("Branch '" + name + "' deleted.")
 		}
 	},
 }
+
 
 
