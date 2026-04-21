@@ -3,44 +3,12 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"mycelium/internal/resume"
 	"reflect"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/spf13/cobra"
 )
-
-// Fully mapped structs for the diff engine
-type DiffResume struct {
-	Basics     DiffBasics       `json:"basics"`
-	Education  []DiffEducation  `json:"education"`
-	Experience []DiffExperience `json:"experience"`
-	Skills     DiffSkills       `json:"skills"`
-}
-
-type DiffBasics struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Phone string `json:"phone"`
-}
-
-type DiffEducation struct {
-	School string `json:"school"`
-	Degree string `json:"degree"`
-}
-
-type DiffExperience struct {
-	Company  string   `json:"company"`
-	Role     string   `json:"role"`
-	Location string   `json:"location"`
-	Date     string   `json:"date"`
-	Points   []string `json:"points"`
-}
-
-type DiffSkills struct {
-	Languages []string `json:"languages"`
-	Tools     []string `json:"tools"`
-}
 
 func init() {
 	rootCmd.AddCommand(diffCmd)
@@ -51,12 +19,18 @@ var diffCmd = &cobra.Command{
 	Short: "Show all changes in your resume data",
 	Run: func(cmd *cobra.Command, args []string) {
 		// 1. Read Current from disk
-		data, _ := os.ReadFile("resume.json")
-		var current DiffResume
-		json.Unmarshal(data, &current)
+		current, err := resume.Read()
+		if err != nil {
+			fmt.Println("[ERROR]", err)
+			return
+		}
 
 		// 2. Read Previous from Git
-		r, _ := git.PlainOpen(".")
+		r, err := git.PlainOpen(".")
+		if err != nil {
+			fmt.Println("[ERROR] Not a mycelium repo. Run 'mycelium init'")
+			return
+		}
 		ref, err := r.Head()
 		if err != nil {
 			fmt.Println("[ERROR] No commit history found. Commit once first.")
@@ -66,7 +40,7 @@ var diffCmd = &cobra.Command{
 		tree, _ := commit.Tree()
 		file, _ := tree.File("resume.json")
 		prevData, _ := file.Contents()
-		var prev DiffResume
+		var prev resume.Resume
 		json.Unmarshal([]byte(prevData), &prev)
 
 		fmt.Printf("🔍 Diffing current changes against: %s\n", ref.Hash().String()[:7])
@@ -82,8 +56,12 @@ var diffCmd = &cobra.Command{
 			fmt.Printf("[BASICS] Phone: %s -> %s\n", prev.Basics.Phone, current.Basics.Phone)
 			hasChanges = true
 		}
+		if prev.Basics.Email != current.Basics.Email {
+			fmt.Printf("[BASICS] Email: %s -> %s\n", prev.Basics.Email, current.Basics.Email)
+			hasChanges = true
+		}
 
-		// --- CHECK EXPERIENCE (Comprehensive) ---
+		// --- CHECK EXPERIENCE ---
 		if len(prev.Experience) != len(current.Experience) {
 			fmt.Printf("[EXP] Number of jobs changed: %d -> %d\n", len(prev.Experience), len(current.Experience))
 			hasChanges = true
@@ -115,13 +93,35 @@ var diffCmd = &cobra.Command{
 					fmt.Printf("[EDU] School: %s -> %s\n", prev.Education[i].School, current.Education[i].School)
 					hasChanges = true
 				}
+				if prev.Education[i].Degree != current.Education[i].Degree {
+					fmt.Printf("[EDU] Degree at %s: %s -> %s\n", current.Education[i].School, prev.Education[i].Degree, current.Education[i].Degree)
+					hasChanges = true
+				}
 			}
 		}
 
 		// --- CHECK SKILLS ---
-		if !reflect.DeepEqual(prev.Skills.Languages, current.Skills.Languages) {
-			fmt.Println("[SKILLS] Languages list was modified.")
+		if !reflect.DeepEqual(prev.Skills, current.Skills) {
+			fmt.Println("[SKILLS] Skills list was modified.")
 			hasChanges = true
+		}
+
+		// --- CHECK PROJECTS ---
+		if len(prev.Projects) != len(current.Projects) {
+			fmt.Printf("[PROJECTS] Number of projects changed.\n")
+			hasChanges = true
+		} else {
+			for i := range current.Projects {
+				p, c := prev.Projects[i], current.Projects[i]
+				if p.Name != c.Name {
+					fmt.Printf("[PROJECTS] Name: %s -> %s\n", p.Name, c.Name)
+					hasChanges = true
+				}
+				if !reflect.DeepEqual(p.Points, c.Points) {
+					fmt.Printf("[PROJECTS] Details updated for %s\n", c.Name)
+					hasChanges = true
+				}
+			}
 		}
 
 		if !hasChanges {
@@ -129,3 +129,4 @@ var diffCmd = &cobra.Command{
 		}
 	},
 }
+
