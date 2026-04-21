@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
+	"mycelium/internal/resume"
 
 	"github.com/google/generative-ai-go/genai"
 	"github.com/spf13/cobra"
@@ -32,9 +32,9 @@ var reviewCmd = &cobra.Command{
 		fmt.Printf("[AI] AI Recruiter is analyzing your resume for the role: [%s]...\n", targetRole)
 
 		// 1. Read Resume
-		resumeData, err := os.ReadFile("resume.json")
+		resumeData, err := resume.ReadRaw()
 		if err != nil {
-			fmt.Println("[ERROR] Error: resume.json not found.")
+			fmt.Println("[ERROR]", err)
 			return
 		}
 
@@ -47,7 +47,7 @@ var reviewCmd = &cobra.Command{
 		}
 		defer client.Close()
 
-		model := client.GenerativeModel("gemini-2.5-flash")
+		model := client.GenerativeModel("gemini-1.5-flash")
 
 		// 3. The Specialized Prompt
 		prompt := fmt.Sprintf(`
@@ -83,3 +83,4 @@ var reviewCmd = &cobra.Command{
 		fmt.Println("\n------------------------------------------------")
 	},
 }
+
