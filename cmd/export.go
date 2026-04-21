@@ -129,14 +129,35 @@ const pdfHTML = `
         {{if .Basics.LinkedIn}}{{.Basics.LinkedIn}} | {{end}}
         {{if .Basics.GitHub}}{{.Basics.GitHub}}{{end}}
     </div>
-    <div class="section">Education</div>
-    {{range .Education}}<div class="row"><span>{{.School}}</span><span>{{.Date}}</span></div><div class="sub-row"><span>{{.Degree}}</span><span>{{if .CGPA}}CGPA: {{.CGPA}}{{end}}</span></div>{{end}}
-    <div class="section">Technical Skills</div>
-    <div style="font-size: 10.5pt; margin-top: 5px;">{{range $cat, $val := .Skills}}<strong>{{$cat}}:</strong> {{$val}}<br>{{end}}</div>
-    <div class="section">Experience</div>
-    {{range .Experience}}<div class="row"><span>{{.Company}}</span><span>{{.Date}}</span></div><div class="sub-row"><span>{{.Role}}</span></div><ul>{{range .Points}}<li>{{.}}</li>{{end}}</ul>{{end}}
-    <div class="section">Projects</div>
-    {{range .Projects}}<div class="row"><span>{{.Name}} | <span style="font-weight:normal; font-style:italic;">{{.Tech}}</span></span></div><ul>{{range .Points}}<li>{{.}}</li>{{end}}</ul>{{end}}
+
+    {{range .SectionOrder}}
+        {{if eq . "education"}}
+            <div class="section">Education</div>
+            {{range $.Education}}
+                <div class="row"><span>{{.School}}</span><span>{{.Date}}</span></div>
+                <div class="sub-row"><span>{{.Degree}}</span><span>{{if .CGPA}}CGPA: {{.CGPA}}{{end}}</span></div>
+            {{end}}
+        {{else if eq . "skills"}}
+            <div class="section">Technical Skills</div>
+            <div style="font-size: 10.5pt; margin-top: 5px;">
+                {{range $cat, $val := $.Skills}}<strong>{{$cat}}:</strong> {{$val}}<br>{{end}}
+            </div>
+        {{else if eq . "experience"}}
+            <div class="section">Experience</div>
+            {{range $.Experience}}
+                <div class="row"><span>{{.Company}}</span><span>{{.Date}}</span></div>
+                <div class="sub-row"><span>{{.Role}}</span></div>
+                <ul>{{range .Points}}<li>{{.}}</li>{{end}}</ul>
+            {{end}}
+        {{else if eq . "projects"}}
+            <div class="section">Projects</div>
+            {{range $.Projects}}
+                <div class="row"><span>{{.Name}} | <span style="font-weight:normal; font-style:italic;">{{.Tech}}</span></span></div>
+                <ul>{{range .Points}}<li>{{.}}</li>{{end}}</ul>
+            {{end}}
+        {{end}}
+    {{end}}
 </body>
 </html>`
+
 
